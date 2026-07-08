@@ -1,0 +1,73 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{% static "style.css" %}">
+    <title>{{ title }}</title>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg bg-light" data-bs-theme="light">
+  <div class="container-fluid">
+    <span class="op-tl">Ваши денежные операции</span>
+      <form class="d-flex">
+         {% comment %} <a class="btn btn-secondary my-2 my-sm-0" href="{% url "catalog" %}">Редактировать справочник</a> {% endcomment %}
+      </form>
+    </div>
+  </div>
+</nav>
+  <hr>
+  <div class="operations">
+        <!-- Поиск + кнопка Добавить -->
+        <div class="search-container">
+            <div class="tree-select-wrapper">
+                <input type="text" class="form-control" id="treeInput" placeholder="Please select" readonly>
+                <div class="dropdown-tree" id="treeDropdown"></div>
+            </div>
+            <button type="button" class="btn-add">
+                <i class="fas fa-plus"></i> Добавить
+            </button>
+        </div>
+
+        <!-- Блок с датой и карточкой -->
+        <div class="op-per-date">
+            <h5>01-02-2004</h5>
+
+            <!-- Одна карточка -->
+            <div class="card-with-delete">
+                <div class="op-entry card bg-light mb-3">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <p>
+                                <strong>+Сумма</strong>
+                                Тип (статус)
+                            </p>
+                        </div>
+                        <div class="card-actions">
+                            <button type="button" class="btn-edit">
+                                <i class="fas fa-pencil-alt text-white"></i> Редактировать
+                            </button>
+                            <button type="button" class="btn-delete">
+                                <i class="fas fa-trash-alt"></i> Удалить
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            <small>Категория: подкатегория</small>
+                        </p>
+                        <div>
+                            <hr>
+                            <p class="card-text">
+                                <small>Комментирую эту финансовую операцию, эта финансовая операция откомментирована</small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
