@@ -1,12 +1,20 @@
-from django.http import HttpResponse
 from django.shortcuts import render
 
+from operations.models import OperationEntry
+
 def index(request):
+
+    entries = OperationEntry.objects.order_by("date")
+
+    dates = (
+    OperationEntry.objects
+    .values_list("date", flat=True)
+    .distinct()
+    )
+
     context = {
-        'status': ['Бизнес', 'Личное', 'Налог'],
-        'dates': ['01-01-2025', '02-01-2025', '03-01-2025', '06-02-2025'],
-        'type': ['Пополнение', 'Списание'],
-        'category': ['Инфраструктура', 'Маркетинг'],
-        'subcategory': ['VPS', 'Proxy']
+        'dates': dates,
+        'entries': entries
     }
+
     return render(request, 'operations/index.html', context)

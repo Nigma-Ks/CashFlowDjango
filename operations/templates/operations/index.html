@@ -32,17 +32,22 @@
         </div>
 
         <!-- Блок с датой и карточкой -->
+        {% for dist_date in dates %}
         <div class="op-per-date">
-            <h5>01-02-2004</h5>
-
+            <h5>{{ dist_date|date:"d.m.Y" }}</h5>
+            {% for entry in entries %}
+            {% if entry.date == dist_date %}
             <!-- Одна карточка -->
             <div class="card-with-delete">
                 <div class="op-entry card bg-light mb-3">
                     <div class="card-header">
                         <div class="card-title">
                             <p>
-                                <strong>+Сумма</strong>
-                                Тип (статус)
+                                <strong>{{ entry.sum }} рублей </strong>
+                                — {{entry.type.name}}
+                                {% if entry.status %}
+                                    ({{ entry.status.name }})
+                                {% endif %}
                             </p>
                         </div>
                         <div class="card-actions">
@@ -56,18 +61,21 @@
                     </div>
                     <div class="card-body">
                         <p class="card-text">
-                            <small>Категория: подкатегория</small>
+                            <small>{{entry.category.name}}: {{entry.subcategory.name}}</small>
                         </p>
                         <div>
                             <hr>
                             <p class="card-text">
-                                <small>Комментирую эту финансовую операцию, эта финансовая операция откомментирована</small>
+                                <small>{{entry.comment | default:""}}</small>
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
+            {% endif %}
+            {% endfor%}
         </div>
+        {% endfor%}
     </div>
 </body>
 </html>
