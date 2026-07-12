@@ -1,120 +1,57 @@
 from django.shortcuts import render
-from operations.models import OperationEntry, Type, Status
+from operations.services.chained_fields import build_tree, get_all_subcategory_ids
+from operations.services.filter import (
+    filter_by_status,
+    filter_by_date,
+    filter_by_structure,
+)
 
-
-def build_tree():
-    result = []
-    types = Type.objects.prefetch_related(
-        'category_set__subcategory_set'
-    ).filter(active=True)
-    for type_obj in types:
-        type_item = {
-            "id": type_obj.id,
-            "name": type_obj.name,
-            "categories": []
-        }
-        for category in type_obj.category_set.all():
-            category_item = {
-                "id": category.id,
-                "name": category.name,
-                "subcategories": []
-            }
-            for subcategory in category.subcategory_set.all():
-
-                    category_item["subcategories"].append({
-
-                        "id": subcategory.id,
-                        "name": subcategory.name
-
-                    })
-            type_item["categories"].append(category_item)
-        result.append(type_item)
-    return result
-
-def get_all_subcategory_ids(tree, type_ids, cat_ids, subcat_ids):
-    """
-    Возвращает множество id подкатегорий, соответствующих выбранным
-    типам, категориям и подкатегориям.
-    """
-    result = set(subcat_ids)
-
-    cat_to_subcats = {}
-    type_to_subcats = {}
-
-    for type_node in tree:
-        t_id = type_node['id']
-        subcats = set()
-        for cat in type_node.get('categories', []):
-            c_id = cat['id']
-            cat_subcats = {sub['id'] for sub in cat.get('subcategories', [])}
-            cat_to_subcats[c_id] = cat_subcats
-            subcats.update(cat_subcats)
-        type_to_subcats[t_id] = subcats
-
-    # Добавляем подкатегории выбранных категорий
-    for cat_id in cat_ids:
-        if cat_id in cat_to_subcats:
-            result.update(cat_to_subcats[cat_id])
-
-    # Добавляем подкатегории выбранных типов
-    for type_id in type_ids:
-        if type_id in type_to_subcats:
-            result.update(type_to_subcats[type_id])
-
-    return result
+from operations.models import OperationEntry, Status
 
 
 def index(request):
     entries = OperationEntry.objects.all()
 
-    # 1. Фильтр по датам
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
-    if date_from:
-        entries = entries.filter(date__gte=date_from)
-    if date_to:
-        entries = entries.filter(date__lte=date_to)
+    # Параметры фильтрации из формы
+    date_from = request.GET.get("date_from")
+    date_to = request.GET.get("date_to")
 
-    # 2. Фильтр по статусам
-    selected_statuses_str = request.GET.getlist('status')
-    selected_statuses = [int(s) for s in selected_statuses_str if s.isdigit()]
-    if selected_statuses:
-        entries = entries.filter(status_id__in=selected_statuses)
+    selected_statuses = request.GET.getlist("status")
+    selected_types = request.GET.getlist("type")
+    selected_categories = request.GET.getlist("category")
+    selected_subcategories = request.GET.getlist("subcategory")
 
-    # 3. Дерево структуры (нужно и для фильтра, и для отображения)
     tree = build_tree()
 
-    # 4. Получаем выбранные элементы структуры
-    selected_types_str = request.GET.getlist('type')
-    selected_categories_str = request.GET.getlist('category')
-    selected_subcategories_str = request.GET.getlist('subcategory')
+    # Применение фильтров
+    entries = filter_by_date(entries, date_from, date_to)
 
-    selected_types_int = [int(x) for x in selected_types_str if x.isdigit()]
-    selected_categories_int = [int(x) for x in selected_categories_str if x.isdigit()]
-    selected_subcategories_int = [int(x) for x in selected_subcategories_str if x.isdigit()]
+    entries = filter_by_status(entries, selected_statuses)
 
-    if selected_types_int or selected_categories_int or selected_subcategories_int:
-        expanded_ids = get_all_subcategory_ids(
-            tree,
-            selected_types_int,
-            selected_categories_int,
-            selected_subcategories_int
-        )
-        entries = entries.filter(subcategory_id__in=expanded_ids)
+    entries = filter_by_structure(
+        entries,
+        tree,
+        selected_types,
+        selected_categories,
+        selected_subcategories,
+        get_all_subcategory_ids,
+    )
 
-    # Подготовка контекста
     entries = entries.order_by("date")
+
     dates = entries.values_list("date", flat=True).distinct()
+
     statuses = Status.objects.values("id", "name")
 
     context = {
-        'dates': dates,
-        'entries': entries,
-        'statuses': statuses,
-        'tree': tree,
-        'selected_statuses': selected_statuses,            
-        'selected_types': selected_types_str,       
-        'selected_categories': selected_categories_str,   
-        'selected_subcategories': selected_subcategories_str,
+        "dates": dates,
+        "entries": entries,
+        "statuses": statuses,
+        "tree": tree,
+        "selected_statuses": selected_statuses,
+        "selected_types": selected_types,
+        "selected_categories": selected_categories,
+        "selected_subcategories": selected_subcategories,
     }
-    return render(request, 'operations/index.html', context)
+
+    return render(request, "operations/index.html", context)

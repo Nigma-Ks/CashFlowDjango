@@ -53,7 +53,7 @@
                                     value="{{ status_id.id }}"
                                     class="sub-check"
                                     data-id="{{ status_id.id }}"
-                                    {% if status_id.id in selected_statuses %}checked{% endif %}
+                                    {% if status_id.id|stringformat:"s" in selected_statuses %}checked{% endif %}
                                 >
                                 <strong>{{ status_id.name }}</strong>
                             </label>
