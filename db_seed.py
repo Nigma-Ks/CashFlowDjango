@@ -1,7 +1,7 @@
 from datetime import date
 from random import randint, choice
 
-from catalog.models import (
+from operations.models import (
     Status,
     Type,
     Category,

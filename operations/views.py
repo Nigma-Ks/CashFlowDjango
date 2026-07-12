@@ -1,18 +1,43 @@
 from django.shortcuts import render
-from operations.models import OperationEntry
-from catalog.models import Status
-from catalog.views import build_tree
+from operations.models import OperationEntry, Type, Status
 
+
+def build_tree():
+    result = []
+    types = Type.objects.prefetch_related(
+        'category_set__subcategory_set'
+    ).filter(active=True)
+    for type_obj in types:
+        type_item = {
+            "id": type_obj.id,
+            "name": type_obj.name,
+            "categories": []
+        }
+        for category in type_obj.category_set.all():
+            category_item = {
+                "id": category.id,
+                "name": category.name,
+                "subcategories": []
+            }
+            for subcategory in category.subcategory_set.all():
+
+                    category_item["subcategories"].append({
+
+                        "id": subcategory.id,
+                        "name": subcategory.name
+
+                    })
+            type_item["categories"].append(category_item)
+        result.append(type_item)
+    return result
 
 def get_all_subcategory_ids(tree, type_ids, cat_ids, subcat_ids):
     """
     Возвращает множество id подкатегорий, соответствующих выбранным
     типам, категориям и подкатегориям.
     """
-    result = set(subcat_ids)  # явно выбранные подкатегории
+    result = set(subcat_ids)
 
-    # Строим отображения: категория -> множество подкатегорий
-    #                       тип -> множество подкатегорий
     cat_to_subcats = {}
     type_to_subcats = {}
 
