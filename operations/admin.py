@@ -1,3 +1,5 @@
 from django.contrib import admin
 
-# Register your models here.
+from operations.models import OperationEntry
+
+admin.site.register(OperationEntry)

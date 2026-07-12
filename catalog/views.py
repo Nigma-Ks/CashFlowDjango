@@ -15,16 +15,12 @@ def build_tree():
             "categories": []
         }
         for category in type_obj.category_set.all():
-            if not category.active:
-                continue
             category_item = {
                 "id": category.id,
                 "name": category.name,
                 "subcategories": []
             }
             for subcategory in category.subcategory_set.all():
-
-                if subcategory.active:
 
                     category_item["subcategories"].append({
 

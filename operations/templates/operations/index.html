@@ -9,73 +9,138 @@
     <title>{{ title }}</title>
 </head>
 <body>
-  <nav class="navbar navbar-expand-lg bg-light" data-bs-theme="light">
-  <div class="container-fluid">
-    <span class="op-tl">Ваши денежные операции</span>
-      <form class="d-flex">
-         <a class="btn btn-secondary my-2 my-sm-0" href="{% url "catalog:index" %}">Редактировать справочник</a>
-      </form>
-    </div>
-  </div>
-</nav>
+    <nav class="navbar navbar-expand-lg bg-light" data-bs-theme="light">
+    <div class="container-fluid">
+        <span class="op-tl">Ваши денежные операции</span>
+        <form class="d-flex">
+            <a class="btn btn-secondary my-2 my-sm-0" href="{% url "catalog:index" %}">Редактировать справочник</a>
+        </form>
+        </div>
+    </nav> 
   <hr>
-  <div class="operations">
-        <!-- Поиск + кнопка Добавить -->
-        <div class="search-container">
-            <div class="tree-select-wrapper">
-                <input type="text" class="form-control" id="treeInput" placeholder="Please select" readonly>
-                <div class="dropdown-tree" id="treeDropdown"></div>
+  <div class="main-layout">          
+        <aside class="filter-sidebar"> 
+        <form action="{% url 'operations:index' %}" method="get">
+            <h5>Период</h5>
+            <div class="date-range">
+                <label>С: <input type="date" name="date_from" value="{{ request.GET.date_from }}"></label>
+                <label>По: <input type="date" name="date_to" value="{{ request.GET.date_to }}"></label>
             </div>
-            <button type="button" class="btn-add">
-                <i class="fas fa-plus"></i> Добавить
-            </button>
-        </div>
 
-        <!-- Блок с датой и карточкой -->
-        {% for dist_date in dates %}
-        <div class="op-per-date">
-            <h5>{{ dist_date|date:"d.m.Y" }}</h5>
-            {% for entry in entries %}
-            {% if entry.date == dist_date %}
-            <!-- Одна карточка -->
-            <div class="card-with-delete">
-                <div class="op-entry card bg-light mb-3">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <p>
-                                <strong>{{ entry.sum }} рублей </strong>
-                                — {{entry.type.name}}
-                                {% if entry.status %}
-                                    ({{ entry.status.name }})
-                                {% endif %}
-                            </p>
-                        </div>
-                        <div class="card-actions">
-                            <button type="button" class="btn-edit">
-                                <i class="fas fa-pencil-alt text-white"></i> Редактировать
-                            </button>
-                            <button type="button" class="btn-delete">
-                                <i class="fas fa-trash-alt"></i> Удалить
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <p class="card-text">
-                            <small>{{entry.category.name}}: {{entry.subcategory.name}}</small>
-                        </p>
-                        <div>
-                            <hr>
-                            <p class="card-text">
-                                <small>{{entry.comment | default:""}}</small>
-                            </p>
-                        </div>
-                    </div>
+            <h5>Статус</h5>
+            <ul class="tree-checkboxes">
+                {% for status_id in statuses %}
+                    <li>
+                        <label>
+                            <input type="checkbox" name="status" value="{{ status_id.id }}"
+                                class="sub-check" data-id="{{ status_id.id }}"
+                                {% if status_id.id in selected_statuses %}checked{% endif %}>
+                            <strong>{{ status_id.name }}</strong>
+                        </label>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <h5>Структура</h5>
+            <ul class="tree-checkboxes">
+                {% for type in tree %}
+                    <li>
+                        <label>
+                            <input type="checkbox" name="type" value="{{ type.id }}"
+                                class="type-check" data-id="{{ type.id }}"
+                                {% if type.id|stringformat:"s" in selected_types %}checked{% endif %}>
+                            <strong>{{ type.name }}</strong>
+                        </label>
+                        {% if type.categories %}
+                            <ul>
+                                {% for cat in type.categories %}
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" name="category" value="{{ cat.id }}"
+                                                class="cat-check" data-parent="{{ type.id }}" data-id="{{ cat.id }}"
+                                                {% if cat.id|stringformat:"s" in selected_categories %}checked{% endif %}>
+                                            {{ cat.name }}
+                                        </label>
+                                        {% if cat.subcategories %}
+                                            <ul>
+                                                {% for sub in cat.subcategories %}
+                                                    <li>
+                                                        <label>
+                                                            <input type="checkbox" name="subcategory" value="{{ sub.id }}"
+                                                                class="sub-check" data-parent="{{ cat.id }}" data-id="{{ sub.id }}"
+                                                                {% if sub.id|stringformat:"s" in selected_subcategories %}checked{% endif %}>
+                                                            {{ sub.name }}
+                                                        </label>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+            <br>
+            <button type="submit" class="btn btn-primary submit">Применить</button>
+        </form>
+        </aside>
+
+        <main class="content">
+            <div class="search-container">
+                    <button type="button" class="btn-add">
+                        <i class="fas fa-plus"></i> Добавить
+                    </button>
                 </div>
+            <div class="operations">
+                <!-- Блок с датой и карточкой -->
+                {% for dist_date in dates %}
+                <div class="op-per-date">
+                    <h5>{{ dist_date|date:"d.m.Y" }}</h5>
+                    {% for entry in entries %}
+                    {% if entry.date == dist_date %}
+                    <!-- Одна карточка -->
+                    <div class="card-with-delete">
+                        <div class="op-entry card bg-light mb-3">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <p>
+                                        <strong>{{ entry.sum }} рублей </strong>
+                                        — {{entry.type.name}}
+                                        {% if entry.status %}
+                                            ({{ entry.status.name }})
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="card-actions">
+                                    <button type="button" class="btn-edit">
+                                        <i class="fas fa-pencil-alt text-white"></i> Редактировать
+                                    </button>
+                                    <button type="button" class="btn-delete">
+                                        <i class="fas fa-trash-alt"></i> Удалить
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    <small>{{entry.category.name}}: {{entry.subcategory.name}}</small>
+                                </p>
+                                <div>
+                                    <hr>
+                                    <p class="card-text">
+                                        <small>{{entry.comment | default:""}}</small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor%}
+                </div>
+                {% endfor%}
             </div>
-            {% endif %}
-            {% endfor%}
-        </div>
-        {% endfor%}
+        </main>
     </div>
 </body>
 </html>
